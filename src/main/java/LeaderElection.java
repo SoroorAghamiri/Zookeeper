@@ -37,10 +37,20 @@ public class LeaderElection implements Watcher {
         }
     }
 
+    /**
+     * Closes the current session with server.
+     * @throws InterruptedException if the current thread is interrupted.
+     */
     public void close() throws InterruptedException{
         zooKeeper.close();
     }
 
+    /**
+     * Creates a zNode as a child to /election with the name convention of c_ followed by a sequence number.
+     * The name of node is saved inside the instance variable <code>this.currentZnodeName</code>
+     * @throws KeeperException
+     * @throws InterruptedException if the current thread is interrupted.
+     */
     public void volunteerForLeadership() throws KeeperException, InterruptedException{
         String znodePrefix = ELECTION_NAMESPACE + "/c_";
         String znodeFullPath = zooKeeper.create(znodePrefix,new byte[]{}, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL_SEQUENTIAL);
@@ -48,6 +58,13 @@ public class LeaderElection implements Watcher {
         this.currentZnodeName = znodeFullPath.replace("/election/" , "");
     }
 
+    /**
+     * Gets a list of children of /election.
+     * Sorts the children lexicographically and gets the smallest child.
+     * By comparing currnet node's name with the smallest child, decides if current node is the leader or not.
+     * @throws KeeperException
+     * @throws InterruptedException if the current thread is interrupted.
+     */
     public void electLeader() throws KeeperException, InterruptedException{
         List<String> electionChildren = zooKeeper.getChildren(ELECTION_NAMESPACE, false);
         Collections.sort(electionChildren);

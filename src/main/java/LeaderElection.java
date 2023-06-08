@@ -6,16 +6,32 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * The LeaderElection class represents a leader election mechanism using Apache ZooKeeper.
+ * It provides the functionality to connect to a ZooKeeper server, register as a candidate for leadership,
+ * and elect a leader among the participating nodes in a distributed system.
+ * The class follows the leader election algorithm based on sequential ephemeral znodes.
+ */
 public class LeaderElection implements Watcher {
     private static final String ZOOKEEPER_ADDRESS = "localhost:2181";
     private static final int SESSION_TIMEOUT = 3000;
     private static final String ELECTION_NAMESPACE = "/election";
     private ZooKeeper zooKeeper;
     private String currentZnodeName;
+
+    /*
+     * Connects to the ZooKeeper server using the specified address and session timeout.
+     * Sets this object as the watcher for ZooKeeper events.
+     */
     public void connectToZookeeper() throws IOException {
         this.zooKeeper = new ZooKeeper(ZOOKEEPER_ADDRESS, SESSION_TIMEOUT, this);
     }
 
+    /*
+     * Processes the received ZooKeeper event.
+     * If the event is a SyncConnected event, it indicates a successful connection to ZooKeeper.
+     * If the event is any other type, it notifies any waiting threads to disconnect from ZooKeeper.
+     */
     public void process(WatchedEvent watchedEvent) {
         switch (watchedEvent.getType()){
             case None:
@@ -31,6 +47,10 @@ public class LeaderElection implements Watcher {
         }
     }
 
+    /*
+     * Pauses the execution of the current thread and waits until notified.
+     * Used to keep the ZooKeeper connection active.
+     */
     public void run() throws InterruptedException{
         synchronized (zooKeeper){
             zooKeeper.wait();
